@@ -2,19 +2,21 @@ from queue import Queue
 from threading import Lock
 from typing import List, Optional
 
-from PySide2.QtCore import QEvent, QObject, QSize, Qt
-from PySide2.QtGui import (
+import vtk
+from PySide6.QtCore import QEvent, QObject, QSize, Qt
+from PySide6.QtGui import (
     QCursor,
     QMouseEvent,
+    QWheelEvent,
+    QOpenGLFunctions,
+)
+from PySide6.QtOpenGL import (
     QOpenGLFramebufferObject,
     QOpenGLFramebufferObjectFormat,
-    QOpenGLFunctions,
-    QWheelEvent,
 )
-from PySide2.QtQuick import QQuickFramebufferObject
-from PySide2.QtWidgets import QApplication
+from PySide6.QtQuick import QQuickFramebufferObject
+from PySide6.QtWidgets import QApplication
 
-import vtk
 from src.graphics import engines
 from src.utils import *
 
@@ -25,10 +27,8 @@ class FboRenderer(QQuickFramebufferObject.Renderer, QObject):
         self.commandQueue = Queue()
         self.commandQueueLock = Lock()
 
-        self.rw = vtk.vtkGenericOpenGLRenderWindow()
-        # The purpose of using vtkExternalOpenGLRenderWindow is
-        # to use vtkGPUVolumeRayCastMapper with vtkVolume
-        # self.rw = vtk.vtkExternalOpenGLRenderWindow()
+        # Qt6 + QQuickFramebufferObject 조합에서는 ExternalOpenGLRenderWindow 가 더 안정적
+        self.rw = vtk.vtkExternalOpenGLRenderWindow()
         self.rwi = vtk.vtkGenericRenderWindowInteractor()
         self.rwi.SetRenderWindow(self.rw)
         self.rw.OpenGLInitContext()
@@ -98,7 +98,10 @@ class FboRenderer(QQuickFramebufferObject.Renderer, QObject):
                 cmd = self.commandQueue.get()
                 cmd.execute()
 
-        self.__fbo.window().resetOpenGLState()
+        # Qt6 에서는 resetOpenGLState 가 없을 수 있으므로 존재할 때만 호출
+        win = self.__fbo.window()
+        if hasattr(win, "resetOpenGLState"):
+            win.resetOpenGLState()
 
     def __openGLInitState(self):
         self.rw.OpenGLInitState()
@@ -123,14 +126,14 @@ class FboRenderer(QQuickFramebufferObject.Renderer, QObject):
                 self.rwi.LeftButtonPressEvent()
             elif event.button() == Qt.RightButton:
                 self.rwi.RightButtonPressEvent()
-            elif event.button() == Qt.MidButton:
+            elif event.button() == Qt.MiddleButton:
                 self.rwi.MiddleButtonPressEvent()
         elif event.type() == QEvent.MouseButtonRelease:
             if event.button() == Qt.LeftButton:
                 self.rwi.LeftButtonReleaseEvent()
             elif event.button() == Qt.RightButton:
                 self.rwi.RightButtonReleaseEvent()
-            elif event.button() == Qt.MidButton:
+            elif event.button() == Qt.MiddleButton:
                 self.rwi.MiddleButtonReleaseEvent()
 
     def __processMouseMoveEvent(self, event: QMouseEvent):
@@ -140,9 +143,11 @@ class FboRenderer(QQuickFramebufferObject.Renderer, QObject):
 
     def __processWheelEvent(self, event: QWheelEvent):
         ctrl, shift = self.__getCtrlShift(event)
-        self.__setEventInformation(event.x(), event.y(), ctrl, shift, chr(0), 0, None)
+        pos = event.position()
+        self.__setEventInformation(pos.x(), pos.y(), ctrl, shift, chr(0), 0, None)
 
-        delta = event.delta()
+        # Qt6 에서는 delta 대신 angleDelta 사용
+        delta = event.angleDelta().y()
         if delta > 0:
             self.rwi.MouseWheelForwardEvent()
         elif delta < 0:

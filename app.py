@@ -2,11 +2,12 @@ import logging
 import os
 import sys
 
-from PySide2.QtCore import Qt, QTimer, Signal
-from PySide2.QtGui import QSurfaceFormat
-from PySide2.QtQml import QQmlApplicationEngine, qmlRegisterType
-from PySide2.QtWidgets import QApplication
 import vtk
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QSurfaceFormat
+from PySide6.QtQml import QQmlApplicationEngine, qmlRegisterType
+from PySide6.QtQuick import QQuickWindow, QSGRendererInterface
+from PySide6.QtWidgets import QApplication
 
 from src.graphics.engines import Fbo
 from src.ctrls import MainCtrl
@@ -39,7 +40,6 @@ def compileQml():
 
 class App(QApplication):
     def __init__(self, sys_argv):
-        sys_argv += ["-style", "material"]  #! MUST HAVE
         super(App, self).__init__(sys_argv)
         self.engine = QQmlApplicationEngine()
         self.__mainCtrl = MainCtrl(self.engine)
@@ -57,6 +57,9 @@ def main():
     compileQml()
     QSurfaceFormat.setDefaultFormat(setDefaultSurfaceFormat(False))
 
+    # Qt Quick 가 OpenGL 백엔드를 사용하도록 강제 (QQuickFramebufferObject 필요)
+    QQuickWindow.setGraphicsApi(QSGRendererInterface.GraphicsApi.OpenGL)
+
     app = App(sys.argv)
 
     if len(app.engine.rootObjects()) == 0:
@@ -65,7 +68,7 @@ def main():
 
     #! Make sure MainView is active --> FboRenderer is created
     QTimer.singleShot(0, app.setup)
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 
 if __name__ == "__main__":
