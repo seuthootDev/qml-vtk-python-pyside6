@@ -1,6 +1,6 @@
 # QML-VTK-Python (PySide6 + VTK 9.x)
 
-This repository is a fork of:
+This project is a modernized Qt6 / PySide6 and VTK 9.x version of the original Qml-VTK-Python implementation:
 https://github.com/dao-duc-tung/Qml-VTK-Python
 
 The original project was based on **PySide2 + VTK 8.x (Qt5)**.
@@ -60,7 +60,7 @@ https://github.com/dao-duc-tung/Qml-VTK-Python
 
 # QML-VTK-Python (PySide6 + VTK 9.x)
 
-이 저장소는 아래 프로젝트의 포크(Fork) 버전입니다:
+이 프로젝트는 기존 Qml-VTK-Python 구현을 Qt6 / PySide6 및 VTK 9.x 환경에 맞게 현대화한 버전입니다:
 https://github.com/dao-duc-tung/Qml-VTK-Python
 
 기존 프로젝트는 **PySide2 + VTK 8.x (Qt5)**를 기반으로 구축되었습니다.
